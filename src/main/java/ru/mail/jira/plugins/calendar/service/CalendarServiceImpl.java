@@ -5,6 +5,7 @@ import com.atlassian.crowd.embedded.api.Group;
 import com.atlassian.jira.bc.JiraServiceContext;
 import com.atlassian.jira.bc.JiraServiceContextImpl;
 import com.atlassian.jira.bc.filter.SearchRequestService;
+import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.exception.GetException;
 import com.atlassian.jira.issue.CustomFieldManager;
 import com.atlassian.jira.issue.search.SearchRequest;
@@ -17,8 +18,10 @@ import com.atlassian.jira.security.groups.GroupManager;
 import com.atlassian.jira.security.roles.ProjectRole;
 import com.atlassian.jira.security.roles.ProjectRoleManager;
 import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.jira.user.ApplicationUsers;
 import com.atlassian.jira.user.util.UserManager;
 import com.atlassian.jira.util.I18nHelper;
+import com.atlassian.jira.util.MessageSet;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,6 +87,7 @@ public class CalendarServiceImpl implements CalendarService {
     private ProjectRoleManager projectRoleManager;
     private SearchRequestService searchRequestService;
     private SearchRequestManager searchRequestManager;
+    private SearchService searchService;
     private UserCalendarService userCalendarService;
     private UserManager userManager;
 
@@ -117,6 +121,10 @@ public class CalendarServiceImpl implements CalendarService {
 
     public void setSearchRequestManager(SearchRequestManager searchRequestManager) {
         this.searchRequestManager = searchRequestManager;
+    }
+
+    public void setSearchService(SearchService searchService) {
+        this.searchService = searchService;
     }
 
     public void setUserCalendarService(UserCalendarService userCalendarService) {
@@ -265,7 +273,7 @@ public class CalendarServiceImpl implements CalendarService {
 
     private void setCalendarFields(Calendar calendar, CalendarSettingDto calendarSettingDto) {
         calendar.setName(calendarSettingDto.getSelectedName());
-        calendar.setSource(calendarSettingDto.getSelectedSourceId());
+        calendar.setSource(String.format("%s_%s", calendarSettingDto.getSelectedSourceType(), calendarSettingDto.getSelectedSourceValue()));
         calendar.setColor(calendarSettingDto.getSelectedColor());
         calendar.setEventStart(StringUtils.trimToNull(calendarSettingDto.getSelectedEventStartId()));
         calendar.setEventEnd(StringUtils.trimToNull(calendarSettingDto.getSelectedEventEndId()));
@@ -307,7 +315,7 @@ public class CalendarServiceImpl implements CalendarService {
         output.setUsersCount(usersCount);
 
         if (calendar != null) {
-            String filterHasNotAvailableError = checkThatFilterHasAvailable(user, calendar);
+            String filterHasNotAvailableError = checkThatCalendarSourceHasAvailable(user, calendar);
             if (filterHasNotAvailableError != null) {
                 output.setHasError(true);
                 output.setError(filterHasNotAvailableError);
@@ -321,37 +329,46 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     @Nullable
-    private String checkThatFilterHasAvailable(ApplicationUser user, Calendar calendar) {
+    private String checkThatCalendarSourceHasAvailable(ApplicationUser user, Calendar calendar) {
         if (calendar.getSource().startsWith("filter_")) {
             JiraServiceContext jiraServiceContext = new JiraServiceContextImpl(user);
             searchRequestService.getFilter(jiraServiceContext, Long.valueOf(calendar.getSource().substring("filter_".length())));
-            return jiraServiceContext.getErrorCollection().hasAnyErrors() ? CommonUtils.formatErrorCollection(jiraServiceContext.getErrorCollection()) : null;
+            return jiraServiceContext.getErrorCollection().hasAnyErrors() ? i18nHelper.getText("ru.mail.jira.plugins.calendar.unavailableFilterSource") : null;
+        } else if (calendar.getSource().startsWith("project_")) {
+            Project project = projectManager.getProjectObj(Long.parseLong(calendar.getSource().substring("project_".length())));
+            return project == null || !permissionManager.hasPermission(ProjectPermissions.BROWSE_PROJECTS, project, user, false) ? i18nHelper.getText("ru.mail.jira.plugins.calendar.unavailableProjectSource") : null;
         }
         return null;
     }
 
     private void fillSelectedSourceFields(ApplicationUser user, CalendarSettingDto dto, Calendar calendar) {
         String source = calendar.getSource();
-        dto.setSelectedSourceId(source);
         if (source.startsWith("project_")) {
+            dto.setSelectedSourceType("project");
             long projectId = Long.parseLong(source.substring("project_".length()));
+            dto.setSelectedSourceValue(String.valueOf(projectId));
             Project project = projectManager.getProjectObj(projectId);
             if (project == null || !permissionManager.hasPermission(ProjectPermissions.BROWSE_PROJECTS, project, user, false)) {
                 dto.setSelectedSourceIsUnavailable(true);
-                dto.setSelectedSourceName(i18nHelper.getText("ru.mail.jira.plugins.calendar.unavailableSource"));
+                dto.setSelectedSourceName(i18nHelper.getText("ru.mail.jira.plugins.calendar.unavailableProjectSource"));
             } else {
                 dto.setSelectedSourceName(String.format("%s (%s)", project.getName(), project.getKey()));
                 dto.setSelectedSourceAvatarId(project.getAvatar().getId());
             }
         } else if (source.startsWith("filter_")) {
+            dto.setSelectedSourceType("filter");
             long filterId = Long.parseLong(source.substring("filter_".length()));
-            JiraServiceContext serviceContext = new JiraServiceContextImpl(user);
-            SearchRequest filter = searchRequestService.getFilter(serviceContext, filterId);
+            dto.setSelectedSourceValue(String.valueOf(filterId));
+            SearchRequest filter = searchRequestService.getFilter(new JiraServiceContextImpl(user), filterId);
             if (filter == null) {
                 dto.setSelectedSourceIsUnavailable(true);
-                dto.setSelectedSourceName(i18nHelper.getText("ru.mail.jira.plugins.calendar.unavailableSource"));
+                dto.setSelectedSourceName(i18nHelper.getText("ru.mail.jira.plugins.calendar.unavailableFilterSource"));
             } else
                 dto.setSelectedSourceName(filter.getName());
+        } else if (source.startsWith("jql_")) {
+            dto.setSelectedSourceType("jql");
+            dto.setSelectedSourceValue(StringUtils.substringAfter(source, "jql_"));
+
         } else { // theoretically it isn't possible
             dto.setSelectedSourceName("Unknown source");
         }
@@ -362,22 +379,14 @@ public class CalendarServiceImpl implements CalendarService {
             throw new IllegalArgumentException("User doesn't exist");
         if (StringUtils.isBlank(calendarSettingDto.getSelectedName()))
             throw new RestFieldException(i18nHelper.getText("issue.field.required", i18nHelper.getText("common.words.name")), "name");
-        if (StringUtils.isBlank(calendarSettingDto.getSelectedSourceId()))
-            throw new RestFieldException(i18nHelper.getText("issue.field.required", i18nHelper.getText("ru.mail.jira.plugins.calendar.dialog.source")), "source");
-        if (StringUtils.isBlank(calendarSettingDto.getSelectedColor()))
-            throw new RestFieldException(i18nHelper.getText("issue.field.required", i18nHelper.getText("admin.common.words.color")), "color");
-        if (StringUtils.isBlank(calendarSettingDto.getSelectedEventStartId()))
-            throw new RestFieldException(i18nHelper.getText("issue.field.required", i18nHelper.getText("ru.mail.jira.plugins.calendar.dialog.eventStart")), "event-start");
 
-        if (!COLOR_PATTERN.matcher(calendarSettingDto.getSelectedColor()).matches())
-            throw new IllegalArgumentException("Bad color => " + calendarSettingDto.getSelectedColor());
-
-        if (!calendarSettingDto.getSelectedSourceId().startsWith("project_") && !calendarSettingDto.getSelectedSourceId().startsWith("filter_"))
-            throw new IllegalArgumentException("Bad source => " + calendarSettingDto.getSelectedSourceId());
-
+        if (StringUtils.isBlank(calendarSettingDto.getSelectedSourceValue()))
+            throw new RestFieldException(i18nHelper.getText("issue.field.required", i18nHelper.getText("ru.mail.jira.plugins.calendar.dialog.source." + calendarSettingDto.getSelectedSourceType())), "source");
+        if (!calendarSettingDto.getSelectedSourceType().equals("project") && !calendarSettingDto.getSelectedSourceType().startsWith("filter") && !calendarSettingDto.getSelectedSourceType().startsWith("jql"))
+            throw new IllegalArgumentException("Bad source => " + calendarSettingDto.getSelectedSourceType());
         try {
-            if (calendarSettingDto.getSelectedSourceId().startsWith("project_")) {
-                long projectId = Long.parseLong(calendarSettingDto.getSelectedSourceId().substring("project_".length()));
+            if (calendarSettingDto.getSelectedSourceType().equals("project")) {
+                long projectId = Long.parseLong(calendarSettingDto.getSelectedSourceValue());
                 if (isCreate) {
                     Project project = projectManager.getProjectObj(projectId);
                     if (project == null)
@@ -386,8 +395,8 @@ public class CalendarServiceImpl implements CalendarService {
                     if (!permissionManager.hasPermission(ProjectPermissions.BROWSE_PROJECTS, project, user, false))
                         throw new RestFieldException("No Permission to browse project " + project.getName(), "source");
                 }
-            } else if (calendarSettingDto.getSelectedSourceId().startsWith("filter_")) {
-                long filterId = Long.parseLong(calendarSettingDto.getSelectedSourceId().substring("filter_".length()));
+            } else if (calendarSettingDto.getSelectedSourceType().equals("filter")) {
+                long filterId = Long.parseLong(calendarSettingDto.getSelectedSourceValue());
                 if (isCreate) {
                     if (searchRequestManager.getSearchRequestById(filterId) == null)
                         throw new RestFieldException("Can not find filter with id " + filterId, "source");
@@ -397,50 +406,29 @@ public class CalendarServiceImpl implements CalendarService {
                     if (serviceContext.getErrorCollection().hasAnyErrors())
                         throw new RestFieldException(serviceContext.getErrorCollection().getErrorMessages().toString(), "source");
                 }
+            } else if (calendarSettingDto.getSelectedSourceType().equals("jql")) {
+                SearchService.ParseResult parseResult = searchService.parseQuery(ApplicationUsers.toDirectoryUser(user), calendarSettingDto.getSelectedSourceValue());
+                if (!parseResult.isValid())
+                    throw new RestFieldException(StringUtils.join(parseResult.getErrors().getErrorMessages(), "\n"), "source");
+                MessageSet validateMessages = searchService.validateQuery(ApplicationUsers.toDirectoryUser(user), parseResult.getQuery());
+                if (validateMessages.hasAnyErrors())
+                    throw new RestFieldException(StringUtils.join(validateMessages.getErrorMessages(), "\n"), "source");
             }
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Bad source => " + calendarSettingDto.getSelectedSourceId());
+            throw new IllegalArgumentException("Bad source => " + calendarSettingDto.getSelectedSourceValue());
         }
 
+        if (StringUtils.isBlank(calendarSettingDto.getSelectedColor()))
+            throw new RestFieldException(i18nHelper.getText("issue.field.required", i18nHelper.getText("admin.common.words.color")), "color");
+        if (!COLOR_PATTERN.matcher(calendarSettingDto.getSelectedColor()).matches())
+            throw new IllegalArgumentException("Bad color => " + calendarSettingDto.getSelectedColor());
+        if (StringUtils.isBlank(calendarSettingDto.getSelectedEventStartId()))
+            throw new RestFieldException(i18nHelper.getText("issue.field.required", i18nHelper.getText("ru.mail.jira.plugins.calendar.dialog.eventStart")), "event-start");
         for (String field : calendarSettingDto.getSelectedDisplayedFields())
             if (field.startsWith("customfield_")) {
                 if (customFieldManager.getCustomFieldObject(field) == null)
                     throw new RestFieldException("Can not find custom field with id => " + field, "fields");
             } else if (!DISPLAYED_FIELDS.contains(field))
                 throw new RestFieldException(String.format("Can not find field %s among standart fields", field), "fields");
-
-        //todo check if permission subject exists
-        //        if (StringUtils.isNotBlank(shares)) {
-        //            for (String shareExpr : shares.split(";")) {
-        //                LocalShare groupFromShare = getGroupFromExpr(shareExpr);
-        //                LocalShare projectRoleFromShare = getProjectRoleFromExpr(user, shareExpr);
-        //
-        //                if (groupFromShare != null) {
-        //                    if (!groupManager.groupExists(groupFromShare.groupName))
-        //                        throw new RestFieldException(i18nHelper.getText("admin.viewgroup.group.does.not.exist"), "group_" + groupFromShare.groupName);
-        //                    if (!isUserAdmin && !groupManager.isUserInGroup(user.getDirectoryUser().getName(), groupFromShare.groupName))
-        //                        throw new RestFieldException(i18nHelper.getText("common.sharing.exception.not.in.group", groupFromShare.groupName), "group_" + groupFromShare.groupName);
-        //                } else if (projectRoleFromShare != null) {
-        //                    Project project = projectManager.getProjectObj(projectRoleFromShare.projectId);
-        //                    if (project == null)
-        //                        throw new RestFieldException(i18nHelper.getText("common.sharing.exception.project.does.not.exist"), "project_" + projectRoleFromShare.projectId);
-        //
-        //                    if (!isUserAdmin && !permissionManager.hasPermission(Permissions.BROWSE, project, user, false))
-        //                        throw new RestFieldException(i18nHelper.getText("common.sharing.exception.no.permission.project", project.getName()),
-        //                                                     "project_" + projectRoleFromShare.projectId);
-        //
-        //                    if (projectRoleFromShare.roleId != null) {
-        //                        ProjectRole projectRole = projectRoleManager.getProjectRole(projectRoleFromShare.roleId);
-        //                        if (projectRole == null)
-        //                            throw new RestFieldException(i18nHelper.getText("admin.errors.specified.role.does.not.exist"), "project_role_" + projectRoleFromShare.roleId);
-        //
-        //                        if (!isUserAdmin && !projectRoleManager.isUserInProjectRole(user, projectRole, project))
-        //                            throw new RestFieldException(i18nHelper.getText("common.sharing.exception.no.permission.role", project.getName(), projectRole.getName()), "project_role_" + projectRoleFromShare.roleId);
-        //                    }
-        //
-        //                } else
-        //                    throw new IllegalArgumentException("Bad shares value => " + shares);
-        //            }
-        //        }
     }
 }

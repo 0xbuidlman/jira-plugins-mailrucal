@@ -8,6 +8,7 @@ define('calendar/calendar-view', ['jquery', 'underscore', 'backbone', 'calendar/
             this.customsButtonOptions = options && _.has(options, 'contextPath') ? options.customsButtonOptions : {};
             this.timeFormat = options && _.has(options, 'timeFormat') ? options.timeFormat : AJS.Meta.get('date-time');
             this.popupWidth = options && _.has(options, 'popupWidth') ? options.popupWidth : 400;
+            this.enableFullscreen = options && _.has(options, 'enableFullscreen') ? options.enableFullscreen : false;
         },
         _eventSource: function(id) {
             return this.contextPath + '/rest/mailrucalendar/1.0/calendar/events/' + id;
@@ -17,8 +18,22 @@ define('calendar/calendar-view', ['jquery', 'underscore', 'backbone', 'calendar/
         },
         _onClickWeekendsVisibility: function(e) {
             e.preventDefault();
-            e.currentTarget.blur();
             this.trigger('changeWeekendsVisibility');
+        },
+        _toggleFullscreen: function() {
+            this.$('.fc-fullscreen-button span.fc-icon').toggleClass('fc-icon-mailrucalendar-icon-fullscreen fc-icon-mailrucalendar-icon-exit-fullscreen');
+            this.fullscreenMode = !this.fullscreenMode;
+            if (this.fullscreenMode) {
+                $('#header,#timezoneDiffBanner,#announcement-banner,.aui-page-header,#studio-header,#footer').slideUp(400);
+                $('.aui-page-panel-nav').animate({width: 'toggle', 'padding': 'toggle'}, 400);
+            } else
+                $('#header,#timezoneDiffBanner,#announcement-banner,.aui-page-header,#studio-header,#footer,.aui-page-panel-nav').fadeIn(400);
+
+            if (this.getViewType() == 'timeline') {
+                var containerHeight = $(document).height();
+                var timeline = this.$el.fullCalendar('getView').timeline;
+                timeline.setOptions({height: $('body').hasClass('mailru-calendar-fullscreen') ? containerHeight - 93 + 'px' : '450px'});
+            }
         },
         _canButtonVisible: function(name) {
             return this.customsButtonOptions[name] == undefined || this.customsButtonOptions[name].visible !== false;
@@ -36,14 +51,12 @@ define('calendar/calendar-view', ['jquery', 'underscore', 'backbone', 'calendar/
         zoomOutTimeline: function() {
             var view = this.$el.fullCalendar('getView');
             var canZoomOut = view.zoomOut();
-            this._getCalendarHeaderButton('zoom-out').blur();
             !canZoomOut && view.calendar.header.disableButton('zoom-out');
             view.calendar.header.enableButton('zoom-in');
         },
         zoomInTimeline: function() {
             var view = this.$el.fullCalendar('getView');
             var canZoomIn = view.zoomIn();
-            this._getCalendarHeaderButton('zoom-in').blur();
             !canZoomIn && view.calendar.header.disableButton('zoom-in');
             view.calendar.header.enableButton('zoom-out');
         },
@@ -57,7 +70,7 @@ define('calendar/calendar-view', ['jquery', 'underscore', 'backbone', 'calendar/
                 header: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'weekend zoom-out,zoom-in'
+                    right: 'weekend zoom-out,zoom-in' + (this.enableFullscreen ? ' fullscreen' : '')
                 },
                 views: {
                     quarter: {
@@ -81,12 +94,19 @@ define('calendar/calendar-view', ['jquery', 'underscore', 'backbone', 'calendar/
                     'zoom-in': {
                         icon: 'zoom-in',
                         click: $.proxy(this.zoomInTimeline, this)
+                    },
+                    fullscreen: {
+                        icon: 'mailrucalendar-icon-fullscreen',
+                        click: $.proxy(this._toggleFullscreen, this)
                     }
                 },
                 businessHours: {
                     start: '10:00',
                     end: '19:00'
                 },
+                weekNumberTitle: '',
+                weekNumbers: true,
+                weekNumberCalculation: 'ISO',
                 timezone: 'local',
                 timeFormat: this.timeFormat,
                 slotLabelFormat: this.timeFormat,
@@ -137,6 +157,7 @@ define('calendar/calendar-view', ['jquery', 'underscore', 'backbone', 'calendar/
                     });
                 },
                 loading: $.proxy(function(isLoading, view) {
+                    viewRenderFirstTime = false;
                     this.trigger(isLoading ? 'startLoading' : 'stopLoading', view.name);
                 }, this),
                 viewRender: $.proxy(function(view) {
@@ -151,6 +172,13 @@ define('calendar/calendar-view', ['jquery', 'underscore', 'backbone', 'calendar/
                         viewRenderFirstTime = false;
                     else
                         this.trigger('renderComplete');
+
+                    var view = this.$el.fullCalendar('getView');
+                    var start = view.start.clone().startOf('month');
+                    var end = view.end.clone();
+                    for (; start.isBefore(end); start.add(1, 'M')) {
+                        this.$('.fc-day.fc-widget-content[data-date=' + start.format("YYYY-MM-DD") + ']').addClass('fc-first-day-of-month');
+                    }
                 }, this),
                 eventDragStart: function(event) {
                     event.eventDialog && event.eventDialog.hide();
@@ -197,7 +225,7 @@ define('calendar/calendar-view', ['jquery', 'underscore', 'backbone', 'calendar/
             }
         },
         removeAllEventSource: function() {
-            _.each(this.eventSources, function(sourceUrl, calendarId) {
+            _.each(this.eventSources, function(sourceUrl) {
                 this.$el.fullCalendar('removeEventSource', sourceUrl);
             }, this);
             this.eventSources = {};
@@ -217,4 +245,3 @@ define('calendar/calendar-view', ['jquery', 'underscore', 'backbone', 'calendar/
         }
     });
 });
-

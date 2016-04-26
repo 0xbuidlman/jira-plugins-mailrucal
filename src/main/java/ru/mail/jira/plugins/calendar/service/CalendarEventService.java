@@ -4,6 +4,7 @@ import com.atlassian.jira.bc.JiraServiceContext;
 import com.atlassian.jira.bc.JiraServiceContextImpl;
 import com.atlassian.jira.bc.filter.SearchRequestService;
 import com.atlassian.jira.bc.issue.IssueService;
+import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.datetime.DateTimeFormatter;
 import com.atlassian.jira.datetime.DateTimeStyle;
@@ -65,6 +66,7 @@ public class CalendarEventService {
     private RendererManager rendererManager;
     private SearchRequestService searchRequestService;
     private SearchProvider searchProvider;
+    private SearchService searchService;
 
     public void setCalendarService(CalendarService calendarService) {
         this.calendarService = calendarService;
@@ -98,6 +100,10 @@ public class CalendarEventService {
         this.searchProvider = searchProvider;
     }
 
+    public void setSearchService(SearchService searchService) {
+        this.searchService = searchService;
+    }
+
     public List<Event> findEvents(final int calendarId,
                                   final String start,
                                   final String end,
@@ -121,6 +127,9 @@ public class CalendarEventService {
         else if (source.startsWith("filter_"))
             return getFilterEvents(calendarModel, Long.parseLong(source.substring("filter_".length())),
                                    calendarModel.getEventStart(), calendarModel.getEventEnd(), dateFormat.parse(start), dateFormat.parse(end), user, includeIssueInfo);
+        else if (source.startsWith("jql_"))
+            return getJqlEvents(calendarModel, StringUtils.substringAfter(source, "jql_"),
+                                calendarModel.getEventStart(), calendarModel.getEventEnd(), dateFormat.parse(start), dateFormat.parse(end), user, includeIssueInfo);
         else {
             return Collections.emptyList();
         }
@@ -166,6 +175,33 @@ public class CalendarEventService {
         return getEvents(calendar, jqlBuilder, startField, endField, startTime, endTime, user, includeIssueInfo);
     }
 
+    private List<Event> getJqlEvents(Calendar calendar,
+                                     String jql,
+                                     String startField,
+                                     String endField,
+                                     Date startTime,
+                                     Date endTime,
+                                     ApplicationUser user, boolean includeIssueInfo) throws SearchException {
+        if (log.isDebugEnabled())
+            log.debug("getJqlEvents with params. calendar={}, jql={}, startField={}, endField={}, startTime={}, endTime={}, user={}, includeIssueInfo={}",
+                      new Object[]{calendar, jql, startField, endField, startTime, endTime, user, includeIssueInfo});
+        if (log.isDebugEnabled())
+            log.debug("find filter by jql. jql={}", jql);
+        if (jql == null) {
+            log.error("JQL => {} is null.", jql);
+            return new ArrayList<Event>(0);
+        }
+        SearchService.ParseResult parseResult = searchService.parseQuery(ApplicationUsers.toDirectoryUser(user), jql);
+
+        if (parseResult.isValid()) {
+            JqlClauseBuilder jqlBuilder = JqlQueryBuilder.newClauseBuilder(parseResult.getQuery());
+            return getEvents(calendar, jqlBuilder, startField, endField, startTime, endTime, user, includeIssueInfo);
+        } else {
+            log.error("JQL is invalid => {}", jql);
+            return new ArrayList<Event>(0);
+        }
+    }
+
     private List<Event> getEvents(Calendar calendar,
                                   JqlClauseBuilder jqlBuilder,
                                   String startField,
@@ -196,10 +232,14 @@ public class CalendarEventService {
         DateTimeFormatter userDateTimeFormat = dateTimeFormatter.forUser(user).withStyle(DateTimeStyle.ISO_8601_DATE_TIME);
 
         jqlBuilder.and().sub();
-        addDateCondition(startField, startTime, endTime, jqlBuilder, userDateFormat, false);
+        addDateCondition(startField, startTime, endTime, jqlBuilder, userDateFormat);
         if (StringUtils.isNotEmpty(endField)) {
             jqlBuilder.or();
-            addDateCondition(endField, startTime, endTime, jqlBuilder, userDateFormat, true);
+            addDateCondition(endField, startTime, endTime, jqlBuilder, userDateFormat);
+            jqlBuilder.or();
+            addStartLessCondition(startField, startTime, jqlBuilder, userDateFormat);
+            jqlBuilder.and();
+            addEndGreaterCondition(endField, endTime, jqlBuilder, userDateFormat);
         }
         jqlBuilder.endsub();
         boolean dateFieldsIsDraggable = isDateFieldsDraggable(startField, endField);
@@ -239,10 +279,12 @@ public class CalendarEventService {
                 if (startDate != null) {
                     event.setStart(userDateTimeFormat.format(startDate));
                     if (endDate != null)
-                        event.setEnd(isAllDay ? userDateTimeFormat.format(new Date(endDate.getTime() + MILLIS_IN_DAY)) : userDateTimeFormat.format(endDate));
-                } else {
+                        if (endField.equals(DUE_DATE_KEY) || endCF != null && endCF.getCustomFieldType() instanceof DateCFType)
+                            event.setEnd(userDateTimeFormat.format(new Date(endDate.getTime() + MILLIS_IN_DAY)));
+                        else
+                            event.setEnd(userDateTimeFormat.format(endDate));
+                } else
                     event.setStart(userDateTimeFormat.format(endDate));
-                }
 
                 event.setStartEditable(dateFieldsIsDraggable && issueService.isEditable(issue, user));
                 event.setDurationEditable(isDateFieldResizable(endField) && startDate != null && endDate != null && issueService.isEditable(issue, user));
@@ -267,7 +309,7 @@ public class CalendarEventService {
         return result;
     }
 
-    private void addDateCondition(String field, Date startTime, Date endTime, JqlClauseBuilder jcb, DateTimeFormatter dateTimeFormatter, boolean nullable) {
+    private void addDateCondition(String field, Date startTime, Date endTime, JqlClauseBuilder jcb, DateTimeFormatter dateTimeFormatter) {
         if (field.equals(DUE_DATE_KEY))
             jcb.dueBetween(dateTimeFormatter.format(startTime), dateTimeFormatter.format(endTime));
         else if (field.equals(CREATED_DATE_KEY))
@@ -275,16 +317,56 @@ public class CalendarEventService {
         else if (field.equals(UPDATED_DATE_KEY))
             jcb.updatedBetween(dateTimeFormatter.format(startTime), dateTimeFormatter.format(endTime));
         else if (field.equals(RESOLVED_DATE_KEY))
-            jcb.updatedBetween(dateTimeFormatter.format(startTime), dateTimeFormatter.format(endTime));
+            jcb.resolutionDateBetween(dateTimeFormatter.format(startTime), dateTimeFormatter.format(endTime));
         else if (field.startsWith("customfield_")) {
             CustomField customField = customFieldManager.getCustomFieldObject(field);
             if (log.isDebugEnabled())
                 log.debug("add DateRangeCondition for customfield. customField={}, start={}, end={}", new Object[]{customField, startTime, endTime});
             if (customField == null)
                 throw new IllegalArgumentException("Bad custom field id => " + field);
-            jcb.addStringRangeCondition("cf[" + customField.getIdAsLong() + "]", dateTimeFormatter.format(startTime), dateTimeFormatter.format(endTime));
+            jcb.customField(customField.getIdAsLong()).range(dateTimeFormatter.format(startTime), dateTimeFormatter.format(endTime));
         } else
             throw new IllegalArgumentException("Bad field => " + field);
+    }
+
+    private void addStartLessCondition(String startField, Date startTime, JqlClauseBuilder jcb, DateTimeFormatter dateTimeFormatter) {
+        if (startField.equals(DUE_DATE_KEY))
+            jcb.due().ltEq(dateTimeFormatter.format(startTime));
+        else if (startField.equals(CREATED_DATE_KEY))
+            jcb.created().ltEq(dateTimeFormatter.format(startTime));
+        else if (startField.equals(UPDATED_DATE_KEY))
+            jcb.updated().ltEq(dateTimeFormatter.format(startTime));
+        else if (startField.equals(RESOLVED_DATE_KEY))
+            jcb.resolutionDate().ltEq(dateTimeFormatter.format(startTime));
+        else if (startField.startsWith("customfield_")) {
+            CustomField customField = customFieldManager.getCustomFieldObject(startField);
+            if (log.isDebugEnabled())
+                log.debug("add DateRangeCondition for customfield. customField={}, start={}", new Object[]{customField, startTime});
+            if (customField == null)
+                throw new IllegalArgumentException("Bad custom field id => " + startField);
+            jcb.customField(customField.getIdAsLong()).ltEq(dateTimeFormatter.format(startTime));
+        } else
+            throw new IllegalArgumentException("Bad field => " + startField);
+    }
+
+    private void addEndGreaterCondition(String endField, Date endTime, JqlClauseBuilder jcb, DateTimeFormatter dateTimeFormatter) {
+        if (endField.equals(DUE_DATE_KEY))
+            jcb.due().gtEq(dateTimeFormatter.format(endTime));
+        else if (endField.equals(CREATED_DATE_KEY))
+            jcb.created().gtEq(dateTimeFormatter.format(endTime));
+        else if (endField.equals(UPDATED_DATE_KEY))
+            jcb.updated().gtEq(dateTimeFormatter.format(endTime));
+        else if (endField.equals(RESOLVED_DATE_KEY))
+            jcb.resolutionDate().gtEq(dateTimeFormatter.format(endTime));
+        else if (endField.startsWith("customfield_")) {
+            CustomField customField = customFieldManager.getCustomFieldObject(endField);
+            if (log.isDebugEnabled())
+                log.debug("add DateRangeCondition for customfield. customField={}, start={}", new Object[]{customField, endTime});
+            if (customField == null)
+                throw new IllegalArgumentException("Bad custom field id => " + endField);
+            jcb.customField(customField.getIdAsLong()).gtEq(dateTimeFormatter.format(endTime));
+        } else
+            throw new IllegalArgumentException("Bad field => " + endField);
     }
 
     private boolean isAllDayEvent(@Nullable CustomField startCF, @Nullable CustomField endCF,
@@ -520,7 +602,7 @@ public class CalendarEventService {
                     components.add(pc.getName());
                 issueInfo.setComponents(components.toString());
             } else if (extraField.equals(CalendarServiceImpl.DUEDATE) && issue.getDueDate() != null)
-                issueInfo.setDueDate(userDateTimeFormatter.format(issue.getDueDate()));
+                issueInfo.setDueDate(userDateTimeFormatter.withStyle(DateTimeStyle.ISO_8601_DATE).format(issue.getDueDate()));
             else if (extraField.equals(CalendarServiceImpl.ENVIRONMENT) && issue.getEnvironment() != null)
                 issueInfo.setEnvironment(issue.getEnvironment());
             else if (extraField.equals(CalendarServiceImpl.PRIORITY) && issue.getPriorityObject() != null) {

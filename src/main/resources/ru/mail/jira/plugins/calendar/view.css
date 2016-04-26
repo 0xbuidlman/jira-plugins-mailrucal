@@ -139,6 +139,23 @@
     border-color: #f691b2;
 }
 
+.mailrucalendar-icon-filter-issues {
+    background: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+Cjxzdmcgd2lkdGg9IjIwcHgiIGhlaWdodD0iMjBweCIgdmlld0JveD0iMCAwIDIwIDIwIiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHhtbG5zOnNrZXRjaD0iaHR0cDovL3d3dy5ib2hlbWlhbmNvZGluZy5jb20vc2tldGNoL25zIj4KICAgIDwhLS0gR2VuZXJhdG9yOiBTa2V0Y2ggMy4xLjEgKDg3NjEpIC0gaHR0cDovL3d3dy5ib2hlbWlhbmNvZGluZy5jb20vc2tldGNoIC0tPgogICAgPHRpdGxlPmFsbC1pc3N1ZXM8L3RpdGxlPgogICAgPGRlc2M+Q3JlYXRlZCB3aXRoIFNrZXRjaC48L2Rlc2M+CiAgICA8ZGVmcz48L2RlZnM+CiAgICA8ZyBpZD0iUGFnZS0xIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBza2V0Y2g6dHlwZT0iTVNQYWdlIj4KICAgICAgICA8ZyBpZD0iYWxsLWlzc3VlcyIgc2tldGNoOnR5cGU9Ik1TQXJ0Ym9hcmRHcm91cCIgZmlsbD0iIzMzMzMzMyI+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik0xMy40LDE0IEwxOSwxNCBMMTksMTMgTDE0LjIsMTMgQzE0LDEzLjQgMTMuNywxMy43IDEzLjQsMTQgTDEzLjQsMTQgWiIgaWQ9IlNoYXBlIiBza2V0Y2g6dHlwZT0iTVNTaGFwZUdyb3VwIj48L3BhdGg+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik0xOSwxMSBMMTksMTAgTDE1LjQsMTAgQzE1LjQsMTAuMyAxNS4zLDEwLjcgMTUuMiwxMSBMMTksMTEgTDE5LDExIFoiIGlkPSJTaGFwZSIgc2tldGNoOnR5cGU9Ik1TU2hhcGVHcm91cCI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNMTksOCBMMTksNyBMMTUuMiw3IEMxNS4zLDcuMyAxNS40LDcuNyAxNS40LDggTDE5LDggTDE5LDggWiIgaWQ9IlNoYXBlIiBza2V0Y2g6dHlwZT0iTVNTaGFwZUdyb3VwIj48L3BhdGg+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik0xNC4yLDUgTDE5LDUgTDE5LDQgTDEzLjQsNCBDMTMuNyw0LjMgMTQsNC42IDE0LjIsNSBMMTQuMiw1IFoiIGlkPSJTaGFwZSIgc2tldGNoOnR5cGU9Ik1TU2hhcGVHcm91cCI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNOC41LDQgQzUuNyw0IDMuNSw2LjIgMy41LDkgQzMuNSwxMCAzLjgsMTAuOCA0LjIsMTEuNiBMMS41LDE0LjMgQzEuMSwxNC43IDEuMSwxNS4zIDEuNSwxNS43IEwxLjUsMTUuNyBDMS45LDE2LjEgMi41LDE2LjEgMi45LDE1LjcgTDUuNiwxMyBDNi41LDEzLjcgNy40LDE0IDguNSwxNCBDMTEuMywxNCAxMy41LDExLjggMTMuNSw5IEMxMy41LDYuMiAxMS4zLDQgOC41LDQgTDguNSw0IFogTTguNSwxMyBDNi4zLDEzIDQuNSwxMS4yIDQuNSw5IEM0LjUsNi44IDYuMyw1IDguNSw1IEMxMC43LDUgMTIuNSw2LjggMTIuNSw5IEMxMi41LDExLjIgMTAuNywxMyA4LjUsMTMgTDguNSwxMyBaIiBpZD0iU2hhcGUiIHNrZXRjaDp0eXBlPSJNU1NoYXBlR3JvdXAiPjwvcGF0aD4KICAgICAgICA8L2c+CiAgICA8L2c+Cjwvc3ZnPg==");
+    background-size: 20px 20px;
+    height: 20px;
+    width: 20px;
+}
+
+.fc-icon-mailrucalendar-icon-fullscreen {
+    background: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/PjwhRE9DVFlQRSBzdmcgIFBVQkxJQyAnLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4nICAnaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkJz48c3ZnIGhlaWdodD0iMzJweCIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMzIgMzI7IiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjMycHgiIHhtbDpzcGFjZT0icHJlc2VydmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPjxnIGlkPSJMYXllcl8xIi8+PGcgaWQ9ImZ1bGxzY3JlZW4iPjxnPjxwb2x5Z29uIHBvaW50cz0iMjcuNDE0LDI0LjU4NiAyMi44MjgsMjAgMjAsMjIuODI4IDI0LjU4NiwyNy40MTQgMjAsMzIgMzIsMzIgMzIsMjAgICAiIHN0eWxlPSJmaWxsOiM0RTRFNTA7Ii8+PHBvbHlnb24gcG9pbnRzPSIxMiwwIDAsMCAwLDEyIDQuNTg2LDcuNDE0IDkuMTI5LDExLjk1MyAxMS45NTcsOS4xMjUgNy40MTQsNC41ODYgICAiIHN0eWxlPSJmaWxsOiM0RTRFNTA7Ii8+PHBvbHlnb24gcG9pbnRzPSIxMiwyMi44MjggOS4xNzIsMjAgNC41ODYsMjQuNTg2IDAsMjAgMCwzMiAxMiwzMiA3LjQxNCwyNy40MTQgICAiIHN0eWxlPSJmaWxsOiM0RTRFNTA7Ii8+PHBvbHlnb24gcG9pbnRzPSIzMiwwIDIwLDAgMjQuNTg2LDQuNTg2IDIwLjA0Myw5LjEyNSAyMi44NzEsMTEuOTUzIDI3LjQxNCw3LjQxNCAzMiwxMiAgICIgc3R5bGU9ImZpbGw6IzRFNEU1MDsiLz48L2c+PC9nPjwvc3ZnPg==");
+    background-size: 14px 14px;
+}
+
+.fc-icon-mailrucalendar-icon-exit-fullscreen {
+    background: url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/PjwhRE9DVFlQRSBzdmcgIFBVQkxJQyAnLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4nICAnaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkJz48c3ZnIGhlaWdodD0iMzJweCIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMzIgMzI7IiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjMycHgiIHhtbDpzcGFjZT0icHJlc2VydmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPjxnIGlkPSJMYXllcl8xIi8+PGcgaWQ9ImZ1bGxzY3JlZW5feDVGX2V4aXQiPjxnPjxwb2x5Z29uIHBvaW50cz0iMjQuNTg2LDI3LjQxNCAyOS4xNzIsMzIgMzIsMjkuMTcyIDI3LjQxNCwyNC41ODYgMzIsMjAgMjAsMjAgMjAsMzIgICAiIHN0eWxlPSJmaWxsOiM0RTRFNTA7Ii8+PHBvbHlnb24gcG9pbnRzPSIwLDEyIDEyLDEyIDEyLDAgNy40MTQsNC41ODYgMi44NzUsMC4wNDMgMC4wNDcsMi44NzEgNC41ODYsNy40MTQgICAiIHN0eWxlPSJmaWxsOiM0RTRFNTA7Ii8+PHBvbHlnb24gcG9pbnRzPSIwLDI5LjE3MiAyLjgyOCwzMiA3LjQxNCwyNy40MTQgMTIsMzIgMTIsMjAgMCwyMCA0LjU4NiwyNC41ODYgICAiIHN0eWxlPSJmaWxsOiM0RTRFNTA7Ii8+PHBvbHlnb24gcG9pbnRzPSIyMCwxMiAzMiwxMiAyNy40MTQsNy40MTQgMzEuOTYxLDIuODcxIDI5LjEzMywwLjA0MyAyNC41ODYsNC41ODYgMjAsMCAgICIgc3R5bGU9ImZpbGw6IzRFNEU1MDsiLz48L2c+PC9nPjwvc3ZnPg==");
+    background-size: 14px 14px;
+}
+
 .select2-container.select2-container-disabled .select2-choice,
 .select2-container.select2-container-disabled .select2-choices,
 .select2-container.select2-container-disabled .select2-choices .select2-search-choice {
@@ -332,6 +349,10 @@ div.calendar-list-item-block.calendar-list-item-selected .calendar-vews-buttons-
     padding: 0;
 }
 
+#calendar-dialog .medium-long-field {
+    max-width: 350px;
+}
+
 #calendar-dialog .aui-navgroup {
     border-right: 1px solid #ccc;
     box-sizing: border-box;
@@ -341,7 +362,57 @@ div.calendar-list-item-block.calendar-list-item-selected .calendar-vews-buttons-
     vertical-align: top;
 }
 
+#calendar-dialog #advanced-search {
+    padding: 4px 26px 4px 26px;
+    resize: none;
+}
+
+#calendar-dialog .atlassian-autocomplete {
+    height: 70px;
+}
+
+#calendar-dialog .atlassian-autocomplete > .syntax-help,
+#calendar-dialog .atlassian-autocomplete > .syntax-help:hover {
+    position: absolute;
+    color: #707070;
+    right: 56px;
+    top: 6px;
+}
+
+#calendar-dialog .atlassian-autocomplete > .mailrucalendar-jql-link,
+#calendar-dialog .atlassian-autocomplete > .mailrucalendar-jql-link:hover {
+    position: absolute;
+    right: 26px;
+    top: 4px;
+    color: #707070;
+}
+
+#calendar-dialog .atlassian-autocomplete label .icon {
+    position: absolute;
+    top: 7px;
+    left: 6px;
+}
+
+#calendar-dialog .atlassian-autocomplete label .jql-label {
+    border: 1px solid #cccccc;
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: -1px;
+    background-color: #fff;
+    padding: 2px 5px;
+    border-bottom-color: transparent;
+}
+
+#calendar-dialog #calendar-dialog-source-error {
+    white-space: pre-line;
+    word-break: break-all;
+    max-width: 350px;
+}
+
 #calendar-dialog-common-tab,
+#calendar-dialog-source-tab,
 #calendar-dialog-permissions-tab {
     display: table-cell;
     width: 600px;
@@ -362,6 +433,7 @@ div.calendar-list-item-block.calendar-list-item-selected .calendar-vews-buttons-
 
 #calendar-dialog-permission-table tbody > tr .calendar-dialog-permission-table-action .aui-icon {
     visibility: hidden;
+    float: right;
 }
 
 #calendar-dialog-permission-table.aui.aui-table-rowhover > tfoot tr:hover {
@@ -373,7 +445,7 @@ div.calendar-list-item-block.calendar-list-item-selected .calendar-vews-buttons-
     max-width: 310px;
 }
 
-.calendar-dialog-permission-table-subject-overflow {
+.calendar-dialog-select-overflow {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -416,29 +488,34 @@ div.calendar-list-item-block.calendar-list-item-selected .calendar-vews-buttons-
     min-width: 195px;
 }
 
-.calendar-dialog-permission-table-access-type.calendar-dialog-permission-table-action {
-    text-align: right;
-}
-
-#calendar-dialog-permission-table tbody li.aui-lozenge {
+#calendar-dialog-permission-table tbody a.aui-lozenge {
     cursor: pointer;
     margin-right: 5px;
-}
-
-#calendar-dialog-permission-table li.aui-lozenge[disabled] {
-    opacity: 0.5;
-    cursor: default;
-}
-
-#calendar-dialog-permission-table td > ul {
     float: left;
-    margin-top: -1px;
-    padding-left: 0;
+}
+
+#calendar-dialog-permission-table a.aui-lozenge[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#calendar-dialog-permission-table td > a.aui-lozenge {
+    margin-top: 2px;
+    text-decoration: none;
+}
+
+#calendar-dialog-permission-table td > a.aui-lozenge.aui-lozenge-subtle {
+    color: #333 !important;
+}
+
+#calendar-dialog-permission-table td > a.aui-lozenge.aui-lozenge-complete {
+    color: #fff !important;
 }
 
 #calendar-dialog-permission-table .calendar-dialog-permission-table-action span.aui-icon {
     cursor: pointer;
     color: #bbb;
+    margin: 1px 0 0 5px;
 }
 
 #calendar-dialog-permission-table .calendar-dialog-permission-table-action span.aui-icon:hover {
@@ -453,6 +530,7 @@ div.calendar-list-item-block.calendar-list-item-selected .calendar-vews-buttons-
 
 #calendar-full-calendar {
     position: relative;
+    z-index: 0;
 }
 
 .calendar-event-object {
@@ -464,6 +542,14 @@ div.calendar-list-item-block.calendar-list-item-selected .calendar-vews-buttons-
 .fc-event-container {
     font-family: inherit;
     font-size: 14px;
+}
+
+.fc-basic-view .fc-week-number {
+    font-weight: bold;
+}
+
+.fc-day.fc-widget-content.fc-first-day-of-month {
+
 }
 
 .fc-day-grid-event .fc-content {
@@ -651,12 +737,7 @@ div.vis-item.vis-box {
 }
 
 /* Like flag */
-
-.mailrucalendar-like-flag-container {
-    margin-top: 10px;
-}
-
-.mailrucalendar-like-flag-rating {
+.mailrucalendar-feedback-flag-rating {
     width: 135px;
     height: 33px;
     margin-top: 10px;
@@ -665,13 +746,13 @@ div.vis-item.vis-box {
 /* :not(:checked) is a filter, so that browsers that don’t support :checked don’t
    follow these rules. Every browser that supports :checked also supports :not(), so
    it doesn’t make the test unnecessarily selective */
-.mailrucalendar-like-flag-rating:not(:checked) > input {
+.mailrucalendar-feedback-flag-rating:not(:checked) > input {
     position: absolute;
     top: -9999px;
     clip: rect(0, 0, 0, 0);
 }
 
-.mailrucalendar-like-flag-rating:not(:checked) > label {
+.mailrucalendar-feedback-flag-rating:not(:checked) > label {
     float: right;
     width: 1em;
     padding: 0 .1em;
@@ -683,19 +764,19 @@ div.vis-item.vis-box {
     color: #ddd;
 }
 
-.mailrucalendar-like-flag-rating > input:checked ~ label {
+.mailrucalendar-feedback-flag-rating > input:checked ~ label {
     color: gold;
 }
 
-.mailrucalendar-like-flag-rating:not(:checked) > label:hover,
-.mailrucalendar-like-flag-rating:not(:checked) > label:hover ~ label {
+.mailrucalendar-feedback-flag-rating:not(:checked) > label:hover,
+.mailrucalendar-feedback-flag-rating:not(:checked) > label:hover ~ label {
     color: gold;
 }
 
-.mailrucalendar-like-flag-rating > input:checked + label:hover,
-.mailrucalendar-like-flag-rating > input:checked + label:hover ~ label,
-.mailrucalendar-like-flag-rating > input:checked ~ label:hover,
-.mailrucalendar-like-flag-rating > input:checked ~ label:hover ~ label,
-.mailrucalendar-like-flag-rating > label:hover ~ input:checked ~ label {
+.mailrucalendar-feedback-flag-rating > input:checked + label:hover,
+.mailrucalendar-feedback-flag-rating > input:checked + label:hover ~ label,
+.mailrucalendar-feedback-flag-rating > input:checked ~ label:hover,
+.mailrucalendar-feedback-flag-rating > input:checked ~ label:hover ~ label,
+.mailrucalendar-feedback-flag-rating > label:hover ~ input:checked ~ label {
     color: gold;
 }

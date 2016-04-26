@@ -5,6 +5,7 @@ import com.atlassian.jira.avatar.Avatar;
 import com.atlassian.jira.avatar.AvatarService;
 import com.atlassian.jira.bc.JiraServiceContextImpl;
 import com.atlassian.jira.bc.filter.SearchRequestService;
+import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.ProjectService;
 import com.atlassian.jira.bc.user.search.UserSearchService;
 import com.atlassian.jira.config.properties.APKeys;
@@ -26,6 +27,7 @@ import com.atlassian.jira.sharing.search.SharedEntitySearchParameters;
 import com.atlassian.jira.sharing.search.SharedEntitySearchParametersBuilder;
 import com.atlassian.jira.sharing.search.SharedEntitySearchResult;
 import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.jira.user.ApplicationUsers;
 import com.atlassian.jira.user.util.UserManager;
 import com.atlassian.jira.util.I18nHelper;
 import org.apache.commons.lang3.StringUtils;
@@ -75,7 +77,7 @@ public class RestConfigurationService {
                                     GlobalPermissionManager globalPermissionManager, GroupManager groupManager, I18nHelper i18nHelper,
                                     JiraAuthenticationContext jiraAuthenticationContext,
                                     ProjectManager projectManager, ProjectService projectService,
-                                    ProjectRoleManager projectRoleManager, SearchRequestService searchRequestService, UserSearchService userSearchService, UserManager userManager) {
+                                    ProjectRoleManager projectRoleManager, SearchRequestService searchRequestService, SearchService searchService, UserManager userManager) {
         this.applicationProperties = applicationProperties;
         this.avatarService = avatarService;
         this.customFieldManager = customFieldManager;
@@ -87,7 +89,7 @@ public class RestConfigurationService {
         this.projectService = projectService;
         this.projectRoleManager = projectRoleManager;
         this.searchRequestService = searchRequestService;
-        this.userSearchService = userSearchService;
+        this.searchService = searchService;
         this.userManager = userManager;
     }
 
@@ -132,14 +134,26 @@ public class RestConfigurationService {
     }
 
     @GET
-    @Path("/eventSources")
-    public Response getEventSources(@QueryParam("filter") final String filter) {
+    @Path("/eventSources/filter")
+    public Response getFilterEventSources(@QueryParam("filter") final String filter) {
+        return new RestExecutor<IssueSourceDto>() {
+            @Override
+            protected IssueSourceDto doAction() throws Exception {
+                IssueSourceDto issueSourceDto = new IssueSourceDto();
+                fillFilterSources(jiraAuthenticationContext.getUser(), issueSourceDto, filter);
+                return issueSourceDto;
+            }
+        }.getResponse();
+    }
+
+    @GET
+    @Path("/eventSources/project")
+    public Response getProjectEventSources(@QueryParam("filter") final String filter) {
         return new RestExecutor<IssueSourceDto>() {
             @Override
             protected IssueSourceDto doAction() throws Exception {
                 IssueSourceDto issueSourceDto = new IssueSourceDto();
                 fillProjectSources(issueSourceDto, filter);
-                fillFilterSources(issueSourceDto, filter);
                 return issueSourceDto;
             }
         }.getResponse();
@@ -156,6 +170,24 @@ public class RestConfigurationService {
                 fillGroups(jiraAuthenticationContext.getUser(), filter, subjectDto);
                 fillProjectRoles(jiraAuthenticationContext.getUser(), filter, subjectDto);
                 return subjectDto;
+            }
+        }.getResponse();
+    }
+
+    @GET
+    @Path("jql/count")
+    public Response countIssues(@QueryParam("jql") final String jql) {
+        return new RestExecutor<Map<String, Object>>() {
+            @Override
+            protected Map<String, Object> doAction() throws Exception {
+                ApplicationUser user = jiraAuthenticationContext.getUser();
+                Map<String, Object> result = new HashMap<String, Object>();
+                if (StringUtils.isNotBlank(jql)) {
+                    SearchService.ParseResult parseResult = searchService.parseQuery(ApplicationUsers.toDirectoryUser(user), jql);
+                    if (parseResult.isValid())
+                        result.put("issueCount", searchService.searchCount(ApplicationUsers.toDirectoryUser(user), parseResult.getQuery()));
+                }
+                return result;
             }
         }.getResponse();
     }
@@ -271,7 +303,7 @@ public class RestConfigurationService {
         for (Project project : allProjects) {
             if (project.getName().toLowerCase().contains(filter) || project.getKey().toLowerCase().contains(filter)) {
                 if (result.size() < 10)
-                    result.add(new SelectItemDto("project_" + project.getId(), String.format("%s (%s)", project.getName(), project.getKey()), project.getAvatar().getId()));
+                    result.add(new SelectItemDto(String.valueOf(project.getId()), String.format("%s (%s)", project.getName(), project.getKey()), project.getAvatar().getId()));
                 total++;
             }
         }
@@ -287,20 +319,26 @@ public class RestConfigurationService {
         issueSourceDto.setProjects(result);
     }
 
-    private void fillFilterSources(IssueSourceDto issueSourceDto, String filter) {
-        List<SelectItemDto> result = new ArrayList<SelectItemDto>();
+    private void fillFilterSources(ApplicationUser user, IssueSourceDto issueSourceDto, String filter) {
+        filter = StringUtils.trimToNull(filter);
         SharedEntitySearchParametersBuilder builder = new SharedEntitySearchParametersBuilder();
-        builder.setName(StringUtils.isBlank(filter) ? null : "\"" + filter + "\"");
+        builder.setName(filter);
         builder.setTextSearchMode(SharedEntitySearchParameters.TextSearchMode.WILDCARD);
         builder.setSortColumn(SharedEntityColumn.NAME, true);
         builder.setEntitySearchContext(SharedEntitySearchContext.USE);
-        SharedEntitySearchResult<SearchRequest> searchResults = searchRequestService.search(new JiraServiceContextImpl(jiraAuthenticationContext.getUser()), builder.toSearchParameters(), 0, filter.length() < 5 ? 10 : Integer.MAX_VALUE);
-
-        for (SearchRequest search : searchResults.getResults())
-            result.add(new SelectItemDto("filter_" + search.getId(), search.getName(), 0));
-
-        issueSourceDto.setTotalFiltersCount(searchResults.getTotalResultCount());
-        issueSourceDto.setFilters(result);
+        if (filter == null) {
+            Collection<SearchRequest> favorites = searchRequestService.getFavouriteFilters(user);
+            Collection<SearchRequest> owned = searchRequestService.getOwnedFilters(user);
+            issueSourceDto.setMyFilters(SelectItemDto.buildSelectSearchRequestItemDtos(owned));
+            issueSourceDto.setFavouriteFilters(SelectItemDto.buildSelectSearchRequestItemDtos(favorites));
+            if (owned.isEmpty() && favorites.isEmpty()) {
+                SharedEntitySearchResult<SearchRequest> searchResults = searchRequestService.search(new JiraServiceContextImpl(user), builder.toSearchParameters(), 0, 10);
+                issueSourceDto.setFilters(SelectItemDto.buildSelectSearchRequestItemDtos(searchResults.getResults()));
+            }
+        } else {
+            SharedEntitySearchResult<SearchRequest> searchResults = searchRequestService.search(new JiraServiceContextImpl(user), builder.toSearchParameters(), 0, Integer.MAX_VALUE);
+            issueSourceDto.setFilters(SelectItemDto.buildSelectSearchRequestItemDtos(searchResults.getResults()));
+        }
     }
 
     private String getUserAvatarSrc(ApplicationUser user) {
