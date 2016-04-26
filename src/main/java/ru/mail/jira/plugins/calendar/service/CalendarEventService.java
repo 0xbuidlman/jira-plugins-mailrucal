@@ -191,7 +191,7 @@ public class CalendarEventService {
             log.error("JQL => {} is null.", jql);
             return new ArrayList<Event>(0);
         }
-        SearchService.ParseResult parseResult = searchService.parseQuery(ApplicationUsers.toDirectoryUser(user), jql);
+        SearchService.ParseResult parseResult = searchService.parseQuery(user, jql);
 
         if (parseResult.isValid()) {
             JqlClauseBuilder jqlBuilder = JqlQueryBuilder.newClauseBuilder(parseResult.getQuery());

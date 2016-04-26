@@ -91,6 +91,7 @@
         <dependency>com.atlassian.auiplugin:aui-inline-dialog2</dependency>
         <dependency>com.atlassian.auiplugin:aui-flag</dependency>
         <dependency>com.atlassian.auiplugin:aui-select2</dependency>
+        <dependency>jira.webresources:jqlautocomplete</dependency>
         <dependency>ru.mail.jira.plugins.mailrucal:mailru-calendar-soy-templates</dependency>
 
         <resource type="download" name="moment.js" location="ru/mail/jira/plugins/calendar/fullcalendar/moment.js"/>

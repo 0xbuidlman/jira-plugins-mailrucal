@@ -7,7 +7,6 @@ import com.atlassian.jira.bc.JiraServiceContextImpl;
 import com.atlassian.jira.bc.filter.SearchRequestService;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.ProjectService;
-import com.atlassian.jira.bc.user.search.UserSearchService;
 import com.atlassian.jira.config.properties.APKeys;
 import com.atlassian.jira.config.properties.ApplicationProperties;
 import com.atlassian.jira.issue.CustomFieldManager;
@@ -27,7 +26,6 @@ import com.atlassian.jira.sharing.search.SharedEntitySearchParameters;
 import com.atlassian.jira.sharing.search.SharedEntitySearchParametersBuilder;
 import com.atlassian.jira.sharing.search.SharedEntitySearchResult;
 import com.atlassian.jira.user.ApplicationUser;
-import com.atlassian.jira.user.ApplicationUsers;
 import com.atlassian.jira.user.util.UserManager;
 import com.atlassian.jira.util.I18nHelper;
 import org.apache.commons.lang3.StringUtils;
@@ -70,7 +68,7 @@ public class RestConfigurationService {
     private final ProjectService projectService;
     private final ProjectRoleManager projectRoleManager;
     private final SearchRequestService searchRequestService;
-    private final UserSearchService userSearchService;
+    private final SearchService searchService;
     private final UserManager userManager;
 
     public RestConfigurationService(ApplicationProperties applicationProperties, AvatarService avatarService, CustomFieldManager customFieldManager,
@@ -183,9 +181,9 @@ public class RestConfigurationService {
                 ApplicationUser user = jiraAuthenticationContext.getUser();
                 Map<String, Object> result = new HashMap<String, Object>();
                 if (StringUtils.isNotBlank(jql)) {
-                    SearchService.ParseResult parseResult = searchService.parseQuery(ApplicationUsers.toDirectoryUser(user), jql);
+                    SearchService.ParseResult parseResult = searchService.parseQuery(user, jql);
                     if (parseResult.isValid())
-                        result.put("issueCount", searchService.searchCount(ApplicationUsers.toDirectoryUser(user), parseResult.getQuery()));
+                        result.put("issueCount", searchService.searchCount(user, parseResult.getQuery()));
                 }
                 return result;
             }
